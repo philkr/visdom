@@ -229,3 +229,19 @@ doesn't override our desire to make them non-interactable */
 .content-properties {
     background-color: #ffffff;
 }
+
+.blur {
+    height: 20px;
+    width: 80%;
+    position: absolute;
+    bottom: 0;
+    left: 5%;
+    z-index: 1001;
+}
+.blur input {
+    opacity: 0;
+    transition: opacity 0.3s ease 0s;
+}
+.blur input:hover {
+    opacity: 1;
+}

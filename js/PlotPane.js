@@ -8,6 +8,7 @@
  */
 
 const Pane = require('./Pane');
+const SG = require("ml-savitzky-golay-generalized");
 
 class PlotPane extends React.Component {
   _paneRef = null;
@@ -18,7 +19,9 @@ class PlotPane extends React.Component {
   componentDidMount() {
     this.newPlot();
   }
-
+  state: State = {
+    blur: 0,
+  }
   componentDidUpdate(prevProps, prevState) {
     this.newPlot();
   }
@@ -33,15 +36,27 @@ class PlotPane extends React.Component {
     else if (this.props.isFocused !== nextProps.isFocused) {
       return true;
     }
+    else if (this.blur !== nextState.blur) {
+      return true;
+    }
     return false;
   }
 
   newPlot = () => {
+    this.state.blur_change = false;
+    var filtered_data = this.props.content.data.map((d) => {
+      // The window size is an odd number 5 <= sz <= d.y.length
+      var sz = 2*Math.min(this.state.blur, Math.floor((d.y.length-3)/2))+3;
+      var r = Object.assign({}, d);
+      if (sz >= 5)
+        r.y = SG(d.y, d.x, {windowSize:sz, derivative: 0, polynomial:3});
+      return r;
+    });
     Plotly.newPlot(
       this.props.contentID,
-      this.props.content.data,
+      filtered_data,
       this.props.content.layout,
-      {showLink: true, linkText: ' '}
+      {showLink: true, linkText: ' ', displaylogo: false}
     )
   }
 
@@ -54,6 +69,12 @@ class PlotPane extends React.Component {
 
   resize = () => {
     this.componentDidUpdate();
+  }
+  
+  change_blur = (v) => {
+    if (this.state.blur !== v) {
+      this.setState({blur: v});
+    }
   }
 
   render() {
@@ -68,6 +89,13 @@ class PlotPane extends React.Component {
           className="plotly-graph-div"
           ref={(ref) => this._plotlyRef = ref}
         />
+        <div className="blur">
+          <input type="range" min="0" max="100"
+            value={this.state.blur}
+            onChange={(e) => this.change_blur(e.target.value)}
+            id={this.props.contentID+"_blur"}
+          />
+        </div>
       </Pane>
     )
   }
